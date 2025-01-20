@@ -5,6 +5,8 @@ on:
       - "v*"
 permissions:
   contents: write
+env:
+  CARGO_TERM_COLOR: always
 jobs:
   release:
     name: Release on Tag

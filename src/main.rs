@@ -1,46 +1,13 @@
-use std::net::SocketAddr;
-
-use axum::{routing::*, Json};
-use clap::Parser;
-use tokio::net::TcpListener;
-
-#[derive(clap::Parser)]
-struct Args {
-    #[clap(long, env)]
-    host: SocketAddr,
-}
+use lambda_runtime::{service_fn, Error, LambdaEvent};
+use serde_json::{json, Value};
 
 #[tokio::main]
-async fn main() {
-    dotenv::dotenv().ok();
-    let Args { host } = Args::parse();
-
-    env_logger::init();
-
-    let router = axum::Router::new()
-        .route("/", get(index));
-
-    let listener = match TcpListener::bind(host).await {
-        Ok(l) => l,
-        Err(err) => {
-            log::error!("{err}");
-            return;
-        }
-    };
-
-    if let Err(err) = axum::serve(listener, router).await {
-        log::error!("{err}");
-        return;
-    }
+async fn main() -> Result<(), Error> {
+    lambda_runtime::run(service_fn(handler)).await
 }
 
-#[derive(serde::Serialize)]
-struct Message {
-    message: String,
-}
-
-async fn index() -> Json<Message> {
-    Json(Message {
-        message: "Hello, world!".into(),
-    })
+async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
+    let payload = event.payload;
+    let first_name = payload["firstName"].as_str().unwrap_or("world");
+    Ok(json!({ "message": format!("Hello, {first_name}!") }))
 }
