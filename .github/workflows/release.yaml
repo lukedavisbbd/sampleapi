@@ -1,0 +1,25 @@
+name: Create release
+on:
+  push:
+    tags:
+      - "v*"
+permissions:
+  contents: write
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  release:
+    name: Release on Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release --verbose
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" "target/release/sampleapi" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${tag#v}" \
+              --generate-notes
